@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+title: FAST Computer Vision
+message: >-
+  If you reference this software in a publication, please
+  cite it as below.
+type: software
+authors:
+  - name: Museum of Science, Boston
+    website: 'https://www.mos.org'
+repository-code: >-
+  https://github.com/FAST-Digital-Exhibit-Design/FAST-Computer-Vision
+abstract: >-
+  A computer vision application to track ArUco markers.
+license: GPL-3.0-only

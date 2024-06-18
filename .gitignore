@@ -1,0 +1,49 @@
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+
+# ===================================== #
+# Visual Studio / MonoDevelop generated #
+# ===================================== #
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.ide
+*.aps
+
+Generated Files/
+packages/
+Assets/
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+build/
+build*/
+bld/
+[Bb]in/
+[Oo]bj/
+
+\.vs/
+
+# Other outputs
