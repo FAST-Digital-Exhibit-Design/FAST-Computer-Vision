@@ -100,10 +100,14 @@ void Settings::Save()
     xmlWriter.writeTextElement("gamma", QString::number(gamma));
     xmlWriter.writeTextElement("rotate", QString::number(rotate));
 
-    xmlWriter.writeTextElement("trackingAreaX", QString::number(trackingAreaX));
-    xmlWriter.writeTextElement("trackingAreaY", QString::number(trackingAreaY));
-    xmlWriter.writeTextElement("trackingAreaWidth", QString::number(trackingAreaWidth));
-    xmlWriter.writeTextElement("trackingAreaHeight", QString::number(trackingAreaHeight));
+    xmlWriter.writeTextElement("trackingTopLeftX", QString::number(trackingTopLeftX));
+    xmlWriter.writeTextElement("trackingTopLeftY", QString::number(trackingTopLeftY));
+    xmlWriter.writeTextElement("trackingTopRightX", QString::number(trackingTopRightX));
+    xmlWriter.writeTextElement("trackingTopRightY", QString::number(trackingTopRightY));
+    xmlWriter.writeTextElement("trackingBottomRightX", QString::number(trackingBottomRightX));
+    xmlWriter.writeTextElement("trackingBottomRightY", QString::number(trackingBottomRightY));
+    xmlWriter.writeTextElement("trackingBottomLeftX", QString::number(trackingBottomLeftX));
+    xmlWriter.writeTextElement("trackingBottomLeftY", QString::number(trackingBottomLeftY));
 
     xmlWriter.writeComment("Advanced settings");
 
@@ -168,17 +172,29 @@ void Settings::Parse(QString name, QString text)
         rotate = text.toInt();
     }
 
-    else if (name == "trackingAreaX") {
-        trackingAreaX = text.toDouble();
+    else if (name == "trackingTopLeftX") {
+        trackingTopLeftX = text.toDouble();
     }
-    else if (name == "trackingAreaY") {
-        trackingAreaY = text.toDouble();
+    else if (name == "trackingTopLeftY") {
+        trackingTopLeftY = text.toDouble();
     }
-    else if (name == "trackingAreaWidth") {
-        trackingAreaWidth = text.toDouble();
+    else if (name == "trackingTopRightX") {
+        trackingTopRightX = text.toDouble();
     }
-    else if (name == "trackingAreaHeight") {
-        trackingAreaHeight = text.toDouble();
+    else if (name == "trackingTopRightY") {
+        trackingTopRightY = text.toDouble();
+    }
+    else if (name == "trackingBottomRightX") {
+        trackingBottomRightX = text.toDouble();
+    }
+    else if (name == "trackingBottomRightY") {
+        trackingBottomRightY = text.toDouble();
+    }
+    else if (name == "trackingBottomLeftX") {
+        trackingBottomLeftX = text.toDouble();
+    }
+    else if (name == "trackingBottomLeftY") {
+        trackingBottomLeftY = text.toDouble();
     }
 
     else if (name == "checkerboardHorizontal") {

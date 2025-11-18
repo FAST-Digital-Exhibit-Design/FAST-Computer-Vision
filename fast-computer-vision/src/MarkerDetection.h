@@ -50,7 +50,7 @@ public:
     double GetFrameRate();
 
 public slots:
-    void UpdateTrackingArea(cv::Rect2d trackingArea);
+    void UpdateTrackingArea(cv::Rect2d trackingAreaRect, std::vector<cv::Point2d> trackingAreaPoints);
     void UpdateDetectorParameters(DetectorParameterData detectorParameters);
 
 private:
@@ -66,11 +66,14 @@ private:
     bool isDetected;
     std::map<int, MarkerData> trackingData;
 
-    cv::Rect2d trackingArea;
+    std::vector<cv::Point2d> trackingAreaPoints;
+    cv::Rect2d trackingAreaRect;
     cv::Rect2d trackingAreaInPixels;
 
     unsigned int currentFrameNumber;
     unsigned int lastFrameNumber;
+
+    const std::string CornerNames[4] = {"Top-Left", "Top-Right", "Bottom-Right", "Bottom-Left"};
 
 	DetectorParameterData detectorParameters;
 	cv::Ptr<cv::aruco::Dictionary> markerDictionary;

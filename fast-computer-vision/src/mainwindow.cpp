@@ -67,13 +67,21 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::UpdateUdpParameters);
 
     // Tracking area settings
-    connect(ui->doubleSpinBox_trackingAreaX, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+    connect(ui->doubleSpinBox_trackingTopLeftX, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         this, &MainWindow::UpdateTrackingArea);
-    connect(ui->doubleSpinBox_trackingAreaY, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+    connect(ui->doubleSpinBox_trackingTopLeftY, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         this, &MainWindow::UpdateTrackingArea);
-    connect(ui->doubleSpinBox_trackingAreaWidth, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+    connect(ui->doubleSpinBox_trackingTopRightX, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         this, &MainWindow::UpdateTrackingArea);
-    connect(ui->doubleSpinBox_trackingAreaHeight, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+    connect(ui->doubleSpinBox_trackingTopRightY, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+        this, &MainWindow::UpdateTrackingArea);
+    connect(ui->doubleSpinBox_trackingBottomRightX, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+        this, &MainWindow::UpdateTrackingArea);
+    connect(ui->doubleSpinBox_trackingBottomRightY, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+        this, &MainWindow::UpdateTrackingArea);
+    connect(ui->doubleSpinBox_trackingBottomLeftX, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+        this, &MainWindow::UpdateTrackingArea);
+    connect(ui->doubleSpinBox_trackingBottomLeftY, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
         this, &MainWindow::UpdateTrackingArea);
 
     // Marker settings
@@ -309,22 +317,57 @@ void MainWindow::UpdateUdpParameters()
 void MainWindow::UpdateTrackingArea()
 {
     // x,y are in the range of [0, 1]
-    double x = ui->doubleSpinBox_trackingAreaX->value();
-    double y = ui->doubleSpinBox_trackingAreaY->value();
-    double maxWidth = 1.0 - x;
-    double maxHeight = 1.0 - y;
+    cv::Point2d topLeft = cv::Point2d(
+        ui->doubleSpinBox_trackingTopLeftX->value(),
+        ui->doubleSpinBox_trackingTopLeftY->value()
+    );
 
-    // Setting the maximum immediately contrains the current value.
-    ui->doubleSpinBox_trackingAreaWidth->setMaximum(maxWidth);
-    ui->doubleSpinBox_trackingAreaHeight->setMaximum(maxHeight);
+    cv::Point2d topRight = cv::Point2d(
+        ui->doubleSpinBox_trackingTopRightX->value(),
+        ui->doubleSpinBox_trackingTopRightY->value()
+    );
 
-    // The maximum value guarantees these values will be correctly constrained.
-    double width = ui->doubleSpinBox_trackingAreaWidth->value();
-    double height = ui->doubleSpinBox_trackingAreaHeight->value();
+    cv::Point2d bottomRight = cv::Point2d(
+        ui->doubleSpinBox_trackingBottomRightX->value(),
+        ui->doubleSpinBox_trackingBottomRightY->value()
+    );
 
-    cv::Rect2d trackingArea(x, y, width, height);
+    cv::Point2d bottomLeft = cv::Point2d(
+        ui->doubleSpinBox_trackingBottomLeftX->value(),
+        ui->doubleSpinBox_trackingBottomLeftY->value()
+    );
 
-    manager.markerDetection.UpdateTrackingArea(trackingArea);
+    std::vector<cv::Point2d> trackingAreaPoints = {
+        topLeft,
+        topRight,
+        bottomRight,
+        bottomLeft
+    };
+
+    cv::Point2d minPoint = cv::Point2d(1.0, 1.0);
+    cv::Point2d maxPoint = cv::Point2d(0.0, 0.0);
+
+    for (int i = 0; i < trackingAreaPoints.size(); i++) {
+        if (trackingAreaPoints[i].x < minPoint.x) {
+            minPoint.x = trackingAreaPoints[i].x;
+        }
+
+        if (trackingAreaPoints[i].y < minPoint.y) {
+            minPoint.y = trackingAreaPoints[i].y;
+        }
+
+        if (trackingAreaPoints[i].x > maxPoint.x) {
+            maxPoint.x = trackingAreaPoints[i].x;
+        }
+
+        if (trackingAreaPoints[i].y > maxPoint.y) {
+            maxPoint.y = trackingAreaPoints[i].y;
+        }
+    }
+
+    cv::Rect2d trackingAreaRect = cv::Rect2d(minPoint, maxPoint);
+
+    manager.markerDetection.UpdateTrackingArea(trackingAreaRect, trackingAreaPoints);
 
     ui->pushButton_saveSettings->setEnabled(true);
     ui->pushButton_loadSettings->setEnabled(true);
@@ -445,10 +488,14 @@ void MainWindow::LoadSettings()
     ui->radioButton_rotate180->setChecked(settings.rotate);
     ui->radioButton_rotate0->setChecked(!settings.rotate);
 
-    ui->doubleSpinBox_trackingAreaX->setValue(settings.trackingAreaX);
-    ui->doubleSpinBox_trackingAreaY->setValue(settings.trackingAreaY);
-    ui->doubleSpinBox_trackingAreaWidth->setValue(settings.trackingAreaWidth);
-    ui->doubleSpinBox_trackingAreaHeight->setValue(settings.trackingAreaHeight);
+    ui->doubleSpinBox_trackingTopLeftX->setValue(settings.trackingTopLeftX);
+    ui->doubleSpinBox_trackingTopLeftY->setValue(settings.trackingTopLeftY);
+    ui->doubleSpinBox_trackingTopRightX->setValue(settings.trackingTopRightX);
+    ui->doubleSpinBox_trackingTopRightY->setValue(settings.trackingTopRightY);
+    ui->doubleSpinBox_trackingBottomRightX->setValue(settings.trackingBottomRightX);
+    ui->doubleSpinBox_trackingBottomRightY->setValue(settings.trackingBottomRightY);
+    ui->doubleSpinBox_trackingBottomLeftX->setValue(settings.trackingBottomLeftX);
+    ui->doubleSpinBox_trackingBottomLeftY->setValue(settings.trackingBottomLeftY);
 
     ui->spinBox_checkerboardHorizontal->setValue(settings.checkerboardHorizontal);
     ui->spinBox_checkerboardVertical->setValue(settings.checkerboardVertical);
@@ -496,10 +543,14 @@ void MainWindow::SaveSettings()
     settings.gamma = ui->doubleSpinBox_gamma->value();
     settings.rotate = ui->radioButton_rotate180->isChecked();
 
-    settings.trackingAreaX = ui->doubleSpinBox_trackingAreaX->value();
-    settings.trackingAreaY = ui->doubleSpinBox_trackingAreaY->value();
-    settings.trackingAreaWidth = ui->doubleSpinBox_trackingAreaWidth->value();
-    settings.trackingAreaHeight = ui->doubleSpinBox_trackingAreaHeight->value();
+    settings.trackingTopLeftX = ui->doubleSpinBox_trackingTopLeftX->value();
+    settings.trackingTopLeftY = ui->doubleSpinBox_trackingTopLeftY->value();
+    settings.trackingTopRightX = ui->doubleSpinBox_trackingTopRightX->value();
+    settings.trackingTopRightY = ui->doubleSpinBox_trackingTopRightY->value();
+    settings.trackingBottomRightX = ui->doubleSpinBox_trackingBottomRightX->value();
+    settings.trackingBottomRightY = ui->doubleSpinBox_trackingBottomRightY->value();
+    settings.trackingBottomLeftX = ui->doubleSpinBox_trackingBottomLeftX->value();
+    settings.trackingBottomLeftY = ui->doubleSpinBox_trackingBottomLeftY->value();
 
     settings.checkerboardHorizontal = ui->spinBox_checkerboardHorizontal->value();
     settings.checkerboardVertical = ui->spinBox_checkerboardVertical->value();

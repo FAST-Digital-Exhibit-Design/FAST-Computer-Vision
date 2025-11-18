@@ -112,10 +112,10 @@ void MarkerDetection::Run()
     cv::Rect2d trackingAreaInPixels;
     {
         std::lock_guard<std::mutex> lockGuard(trackingAreaMutex);
-        trackingAreaInPixels = cv::Rect2d(trackingArea.x * inputImage.cols,
-            trackingArea.y * inputImage.rows,
-            trackingArea.width * inputImage.cols,
-            trackingArea.height * inputImage.rows);
+        trackingAreaInPixels = cv::Rect2d(trackingAreaRect.x * inputImage.cols,
+                                          trackingAreaRect.y * inputImage.rows,
+                                          trackingAreaRect.width * inputImage.cols,
+                                          trackingAreaRect.height * inputImage.rows);
     }
 
     trackingImage = inputImage(trackingAreaInPixels);
@@ -253,10 +253,11 @@ unsigned int MarkerDetection::GetFrameNumber()
     return currentFrameNumber;
 }
 
-void MarkerDetection::UpdateTrackingArea(cv::Rect2d trackingArea)
+void MarkerDetection::UpdateTrackingArea(cv::Rect2d trackingAreaRect, std::vector<cv::Point2d> trackingAreaPoints)
 {
     std::lock_guard<std::mutex> lockGuard(trackingAreaMutex);
-    this->trackingArea = trackingArea;
+    this->trackingAreaRect = trackingAreaRect;
+    this->trackingAreaPoints = trackingAreaPoints;
 }
 
 void MarkerDetection::UpdateDetectorParameters(DetectorParameterData detectorParameters)
@@ -267,21 +268,73 @@ void MarkerDetection::UpdateDetectorParameters(DetectorParameterData detectorPar
 
 void MarkerDetection::DrawGuides(cv::Mat &image)
 {
+    // Draw guide for coordinates
+    cv::Point coordinateCenter(30, 30);
+    cv::line(image, cv::Point(coordinateCenter.x + 1, coordinateCenter.y),
+        cv::Point(coordinateCenter.x + 30, coordinateCenter.y), cv::Scalar(0, 0, 255), 2);
+    cv::putText(image, "X",
+            cv::Point(coordinateCenter.x + 30 + 5, coordinateCenter.y + 5),
+            cv::FONT_HERSHEY_SIMPLEX, 0.5,
+            cv::Scalar(0, 0, 255), 2, cv::LINE_AA);
+    cv::line(image, cv::Point(coordinateCenter.x, coordinateCenter.y + 1),
+        cv::Point(coordinateCenter.x, coordinateCenter.y + 30), cv::Scalar(0, 255, 0), 2);
+    cv::putText(image, "Y",
+            cv::Point(coordinateCenter.x - 5, coordinateCenter.y + 30 + 18),
+            cv::FONT_HERSHEY_SIMPLEX, 0.5,
+            cv::Scalar(0, 255, 0), 2, cv::LINE_AA);
+    //cv::circle(image, coordinateCenter, 2, cv::Scalar(255, 255, 255), -1);
+
     // Draw guide for center cross-hairs
     cv::Point imageCenter(image.cols / 2.0, image.rows / 2.0);
     cv::line(image, cv::Point(imageCenter.x - 50, imageCenter.y),
-        cv::Point(imageCenter.x + 50, imageCenter.y), cv::Scalar(230, 216, 173), 3, cv::LINE_AA);
+        cv::Point(imageCenter.x + 50, imageCenter.y), cv::Scalar(0, 255, 255), 3);
     cv::line(image, cv::Point(imageCenter.x, imageCenter.y - 50),
-        cv::Point(imageCenter.x, imageCenter.y + 50), cv::Scalar(230, 216, 173), 3, cv::LINE_AA);
+        cv::Point(imageCenter.x, imageCenter.y + 50), cv::Scalar(0, 255, 255), 3);
 
     // Draw guide for table tracking area
-    cv::Rect2d trackingAreaGuide;
+    cv::Rect2d trackingGuideRect;
+    std::vector<cv::Point2d> trackingGuidePoints;
     {
         std::lock_guard<std::mutex> lockGuard(trackingAreaMutex);
-        trackingAreaGuide = cv::Rect2d(trackingArea.x * image.cols, trackingArea.y * image.rows,
-            trackingArea.width * image.cols, trackingArea.height * image.rows);
+        trackingGuideRect = cv::Rect2d(trackingAreaRect.x * image.cols, trackingAreaRect.y * image.rows,
+                                       trackingAreaRect.width * image.cols, trackingAreaRect.height * image.rows);
+        trackingGuidePoints = std::vector<cv::Point2d>(trackingAreaPoints.size());
+        for(int i = 0; i < trackingAreaPoints.size(); i++) {
+           trackingGuidePoints[i].x = trackingAreaPoints[i].x * image.cols;
+           trackingGuidePoints[i].y = trackingAreaPoints[i].y * image.rows;
+        }
     }
-    cv::rectangle(image, trackingAreaGuide, cv::Scalar(230, 216, 173), 3, cv::LINE_AA);
+
+    cv::Point2d rectTL = trackingGuideRect.tl();
+    cv::Point2d rectTR = cv::Point2d(trackingGuideRect.br().x, trackingGuideRect.tl().y);
+    cv::Point2d rectBR = trackingGuideRect.br();
+    cv::Point2d rectBL = cv::Point2d(trackingGuideRect.tl().x, trackingGuideRect.br().y);
+
+    cv::line(image, rectTL, rectTL + cv::Point2d(20, 0), cv::Scalar(0, 0, 0), 3, cv::LINE_AA);
+    cv::line(image, rectTL, rectTL + cv::Point2d(0, 20), cv::Scalar(0, 0, 0), 3, cv::LINE_AA);
+    cv::line(image, rectTR, rectTR - cv::Point2d(20, 0), cv::Scalar(0, 0, 0), 3, cv::LINE_AA);
+    cv::line(image, rectTR, rectTR + cv::Point2d(0, 20), cv::Scalar(0, 0, 0), 3, cv::LINE_AA);
+
+    cv::line(image, rectBR, rectBR - cv::Point2d(20, 0), cv::Scalar(0, 0, 0), 3, cv::LINE_AA);
+    cv::line(image, rectBR, rectBR - cv::Point2d(0, 20), cv::Scalar(0, 0, 0), 3, cv::LINE_AA);
+    cv::line(image, rectBL, rectBL + cv::Point2d(20, 0), cv::Scalar(0, 0, 0), 3, cv::LINE_AA);
+    cv::line(image, rectBL, rectBL - cv::Point2d(0, 20), cv::Scalar(0, 0, 0), 3, cv::LINE_AA);
+
+    //cv::rectangle(image, trackingGuideRect, cv::Scalar(0, 0, 0), 1, cv::LINE_AA);
+
+    for(int i = 0; i < trackingGuidePoints.size(); i++) {
+        int j = (i + 1) % trackingGuidePoints.size();
+        cv::line(image, trackingGuidePoints[i], trackingGuidePoints[j], cv::Scalar(255, 255, 0), 2, cv::LINE_AA);
+        cv::circle(image, trackingGuidePoints[i], 4, cv::Scalar(255, 255, 0), -1, cv::LINE_AA);
+
+        cv::Point2d offset = cv::Point2d(trackingGuidePoints[i].x > imageCenter.x ? -4 : 1,
+            trackingGuidePoints[i].y > imageCenter.y ? -1 : 1);
+        offset *= 30;
+        cv::putText(image, CornerNames[i],
+            trackingGuidePoints[i] + offset,
+            cv::FONT_HERSHEY_SIMPLEX, 0.5,
+            cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
+    }
 }
 
 void MarkerDetection::DrawMarkers(cv::Mat &image)
@@ -290,7 +343,9 @@ void MarkerDetection::DrawMarkers(cv::Mat &image)
     // Draw the markers that are being tracked
     for (auto iter = trackingData.begin(); iter != trackingData.end(); iter++ ) {
         MarkerData markerData = iter->second;
-        cv::Scalar color = ScalarHSV2BGR((markerData.id * 7), 255, 255);
+        // H -> 0-180
+        //cv::Scalar color = ScalarHSV2BGR((markerData.id * 7), 255, 255);
+        cv::Scalar color = cv::Scalar(255, 0, 255);
         cv::line(image,
             cv::Point2f(markerData.topLeft[0] * image.cols, markerData.topLeft[1] * image.rows),
             cv::Point2f(markerData.topRight[0] * image.cols, markerData.topRight[1] * image.rows),
@@ -309,10 +364,14 @@ void MarkerDetection::DrawMarkers(cv::Mat &image)
             color, 1, cv::LINE_AA);
         cv::circle(image,
             cv::Point2f(markerData.center[0] * image.cols, markerData.center[1] * image.rows),
-            4, color, -1, cv::LINE_AA);
-        cv::putText(image, cv::format("%d,%d,%d", markerData.id, int(markerData.angle), int(markerData.size)),
+            3, color, -1, cv::LINE_AA);
+//        cv::putText(image, cv::format("%d,%d,%d", markerData.id, int(markerData.angle), int(markerData.size)),
+//            cv::Point2f(markerData.center[0] * image.cols, markerData.center[1] * image.rows),
+//            cv::FONT_HERSHEY_SIMPLEX, 0.75,
+//            cv::Scalar(255, 255, 255), 2, cv::LINE_AA);
+        cv::putText(image, cv::format("%d", markerData.id),
             cv::Point2f(markerData.center[0] * image.cols, markerData.center[1] * image.rows),
-            cv::FONT_HERSHEY_SIMPLEX, 0.75,
+            cv::FONT_HERSHEY_SIMPLEX, 0.5,
             cv::Scalar(255, 255, 255), 2, cv::LINE_AA);
     }
 }

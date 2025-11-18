@@ -48,15 +48,22 @@ public:
     bool startMinimized = false;
 
     QString networkIpAddress = "255.255.255.255";
-    uint networkPort = 50000;
+    uint networkPort = 60000;
 
     double gamma = 0.5;
     bool rotate = false;
 
-    double trackingAreaX = 0;
-    double trackingAreaY = 0;
-    double trackingAreaWidth = 1;
-    double trackingAreaHeight = 1;
+    double trackingTopLeftX = 0;
+    double trackingTopLeftY = 0;
+
+    double trackingTopRightX = 0;
+    double trackingTopRightY = 0;
+
+    double trackingBottomRightX = 0;
+    double trackingBottomRightY = 0;
+
+    double trackingBottomLeftX = 0;
+    double trackingBottomLeftY = 0;
 
     int checkerboardHorizontal = 25;
     int checkerboardVertical = 18;
