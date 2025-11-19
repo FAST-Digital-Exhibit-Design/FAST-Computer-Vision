@@ -54,6 +54,7 @@ public slots:
     void UpdateDetectorParameters(DetectorParameterData detectorParameters);
 
 private:
+    cv::Point2f InverseBilinearCoordinates(cv::Point2f point, std::vector<cv::Point2d> quadCorners);
     void DrawGuides(cv::Mat &image);
     void DrawMarkers(cv::Mat &image);
     cv::Scalar ScalarHSV2BGR(uchar H, uchar S, uchar V);
@@ -65,10 +66,12 @@ private:
 
     bool isDetected;
     std::map<int, MarkerData> trackingData;
+    std::map<int, MarkerData> drawingData;
 
     std::vector<cv::Point2d> trackingAreaPoints;
+    std::vector<cv::Point2d> trackingPointsInPixels;
     cv::Rect2d trackingAreaRect;
-    cv::Rect2d trackingAreaInPixels;
+    cv::Rect2d trackingRectInPixels;
 
     unsigned int currentFrameNumber;
     unsigned int lastFrameNumber;
